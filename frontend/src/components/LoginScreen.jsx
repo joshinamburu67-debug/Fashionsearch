@@ -1,22 +1,43 @@
 import React, { useState } from 'react';
 import { signInWithGoogle } from '../firebase';
-import { Sparkles, Camera, TrendingDown, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { Sparkles, Camera, TrendingDown, ShieldCheck, ArrowRight, AlertCircle, ExternalLink, UserCheck } from 'lucide-react';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [errorObj, setErrorObj] = useState(null);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    setErrorMsg(null);
+    setErrorObj(null);
     try {
       const { user, error } = await signInWithGoogle();
       if (error) {
-        // If user closed the popup, provide friendly feedback
-        if (error.includes('popup-closed-by-user')) {
-          setErrorMsg('Sign-in cancelled. Please click below to try again.');
+        if (error.includes('configuration-not-found')) {
+          setErrorObj({
+            code: 'configuration-not-found',
+            title: 'Google Sign-In Not Enabled in Firebase Console',
+            message: 'In your Firebase Console, Google Authentication needs to be turned ON (takes 30 seconds).',
+            link: 'https://console.firebase.google.com/project/fashionsearch-57146/authentication/providers'
+          });
+        } else if (error.includes('unauthorized-domain')) {
+          setErrorObj({
+            code: 'unauthorized-domain',
+            title: 'Domain Not Authorized in Firebase',
+            message: 'Add "localhost" or "127.0.0.1" to Authorized Domains in Firebase Console Settings.',
+            link: 'https://console.firebase.google.com/project/fashionsearch-57146/authentication/settings'
+          });
+        } else if (error.includes('popup-closed-by-user')) {
+          setErrorObj({
+            code: 'popup-closed',
+            title: 'Sign-In Window Closed',
+            message: 'You closed the Google sign-in window before completing the login.',
+          });
         } else {
-          setErrorMsg(error);
+          setErrorObj({
+            code: 'generic',
+            title: 'Authentication Error',
+            message: error,
+          });
         }
       } else if (user) {
         if (onLoginSuccess) {
@@ -24,9 +45,27 @@ export default function LoginScreen({ onLoginSuccess }) {
         }
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to authenticate with Google.');
+      setErrorObj({
+        code: 'exception',
+        title: 'Sign-in Failed',
+        message: err.message || 'An unexpected error occurred during Google Sign-In.'
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = () => {
+    // Provide an immediate demo account so user can test the app without blockers
+    const guestUser = {
+      uid: 'guest-' + Date.now(),
+      displayName: 'Fashion Explorer (Guest)',
+      email: 'guest@fashionsearch.ai',
+      photoURL: null,
+      isAnonymous: true
+    };
+    if (onLoginSuccess) {
+      onLoginSuccess(guestUser);
     }
   };
 
@@ -125,7 +164,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         </p>
 
         {/* Feature Highlights Pills */}
-        <div className="grid grid-cols-2 gap-2 w-full my-5 text-left">
+        <div className="grid grid-cols-2 gap-2 w-full my-4 text-left">
           <div className="glass-panel p-2.5 rounded-2xl flex items-center gap-2 border border-brand-100 shadow-sm">
             <div className="p-1.5 rounded-xl bg-brand-100 text-brand-600">
               <Camera className="w-3.5 h-3.5" />
@@ -147,11 +186,27 @@ export default function LoginScreen({ onLoginSuccess }) {
           </div>
         </div>
 
-        {/* Error notification */}
-        {errorMsg && (
-          <div className="w-full mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 text-left animate-in fade-in">
-            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-            <p className="leading-snug text-[11px]">{errorMsg}</p>
+        {/* Detailed Friendly Error Box with 1-click Solution */}
+        {errorObj && (
+          <div className="w-full mb-4 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-slate-800 text-xs text-left shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-2 font-bold text-amber-900 mb-1">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>{errorObj.title}</span>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-relaxed mb-2.5">
+              {errorObj.message}
+            </p>
+            {errorObj.link && (
+              <a
+                href={errorObj.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shadow-sm transition active:scale-95"
+              >
+                <span>Enable Google in Firebase Console</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
           </div>
         )}
 
@@ -193,7 +248,18 @@ export default function LoginScreen({ onLoginSuccess }) {
           )}
         </button>
 
-        <p className="text-[10px] text-slate-400 mt-4 font-light">
+        {/* Guest Demo Mode Option */}
+        <div className="w-full mt-3 flex items-center justify-center">
+          <button
+            onClick={handleGuestLogin}
+            className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1.5 py-1 px-3 rounded-lg hover:bg-brand-50 transition active:scale-95"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Or Continue as Guest (Instant Access)</span>
+          </button>
+        </div>
+
+        <p className="text-[10px] text-slate-400 mt-3 font-light">
           Secured by Firebase Authentication • No password required
         </p>
       </div>
