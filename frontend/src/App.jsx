@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, Sparkles, History, RefreshCcw, Search, ExternalLink, SlidersHorizontal, ArrowUpRight, Database } from 'lucide-react';
+import { Camera, Upload, Sparkles, History, RefreshCcw, Search, Database, LogOut } from 'lucide-react';
 import LoadingScreen from './components/LoadingScreen';
+import LoginScreen from './components/LoginScreen';
 import CameraModal from './components/CameraModal';
 import CostumeAnalysisCard from './components/CostumeAnalysisCard';
 import PriceComparisonList from './components/PriceComparisonList';
 import Header from './components/Header';
 import SampleCostumes from './components/SampleCostumes';
 import PostgresExportModal from './components/PostgresExportModal';
+import { auth, onAuthStateChanged, logoutUser } from './firebase';
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Finding Costume & Comparing Store Prices...');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -23,18 +28,37 @@ export default function App() {
   const [recentSearches, setRecentSearches] = useState([]);
   const fileInputRef = useRef(null);
 
-  // Initial load: Fetch samples and initial search data
+  // 1. Listen for Firebase Authentication state changes
   useEffect(() => {
-    fetch('/api/sample-costumes')
-      .then(res => res.json())
-      .then(data => setSamples(data))
-      .catch(err => console.log('Could not load samples', err));
-
-    fetch('/api/searches')
-      .then(res => res.json())
-      .then(data => setRecentSearches(data))
-      .catch(err => console.log('Could not load recent searches', err));
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthChecked(true);
+    });
+    return () => unsubscribe();
   }, []);
+
+  // 2. Fetch sample costumes & recent searches from PostgreSQL 17
+  useEffect(() => {
+    if (user) {
+      fetch('/api/sample-costumes')
+        .then(res => res.json())
+        .then(data => setSamples(data))
+        .catch(err => console.log('Could not load samples', err));
+
+      fetch('/api/searches')
+        .then(res => res.json())
+        .then(data => setRecentSearches(data))
+        .catch(err => console.log('Could not load recent searches', err));
+    }
+  }, [user]);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setUser(null);
+    setActiveAnalysis(null);
+    setActiveComparison(null);
+    setActiveImageUrl(null);
+  };
 
   // Handle file upload
   const handleFileUpload = async (file) => {
@@ -66,7 +90,7 @@ export default function App() {
         setActiveImageUrl(data.image_url);
       }
 
-      // Refresh recent searches
+      // Refresh recent searches from PostgreSQL 17
       fetch('/api/searches')
         .then(r => r.json())
         .then(list => setRecentSearches(list));
@@ -75,7 +99,7 @@ export default function App() {
       console.error(error);
       alert("Error analyzing costume. Please try another image or pick one of the sample costumes!");
     } finally {
-      // Artificial grace period to appreciate the water bar wave
+      // Grace period to display the animated water bar
       setTimeout(() => {
         setIsLoading(false);
       }, 1000);
@@ -127,10 +151,8 @@ export default function App() {
     setLoadingMessage(`Finding deals for ${sample.costume_name}...`);
     setActiveImageUrl(sample.image_url);
 
-    // Call API using sample's details
     setTimeout(async () => {
       try {
-        // Fetch price comparison based on sample costume
         const fakeFileBlob = await fetch(sample.image_url).then(r => r.blob());
         const fakeFile = new File([fakeFileBlob], "sample.jpg", { type: "image/jpeg" });
 
@@ -158,6 +180,21 @@ export default function App() {
     }, 1200);
   };
 
+  // Initial Auth Loading State
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-brand-50 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-xs font-semibold text-brand-700 uppercase tracking-widest">Fashionsearch Auth</p>
+      </div>
+    );
+  }
+
+  // If user is not authenticated with Google, show Login Screen
+  if (!user) {
+    return <LoginScreen onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />;
+  }
+
   return (
     <div className={`min-h-screen bg-brand-50 text-slate-800 ${isMobileFrame ? 'py-8 px-4 flex items-center justify-center' : ''}`}>
       {/* Loading Overlay with F & S Snake logo and flowing Water Bar */}
@@ -179,12 +216,14 @@ export default function App() {
       {/* App Shell: Mobile Frame mode or Full View */}
       <div className={`w-full ${isMobileFrame ? 'mobile-device-frame relative shadow-2xl flex flex-col' : 'max-w-2xl mx-auto min-h-screen flex flex-col'}`}>
         
-        {/* Header */}
+        {/* Header with user profile and sign out */}
         <Header
           onOpenCam={() => setIsCameraOpen(true)}
           onOpenSqlModal={() => setIsSqlModalOpen(true)}
           isMobileFrame={isMobileFrame}
           setIsMobileFrame={setIsMobileFrame}
+          user={user}
+          onLogout={handleLogout}
         />
 
         {/* Main Content Area */}
@@ -193,9 +232,9 @@ export default function App() {
           {/* Hero Banner / Instructions */}
           {!activeAnalysis && (
             <div className="text-center my-4 sm:my-6">
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-semibold mb-3 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-semibold mb-3 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-brand-500" />
-                AI Visual Fashion Engine
+                <span>Hi, {user.displayName ? user.displayName.split(' ')[0] : 'Fashionista'}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
                 Snap Any Costume. <br />
@@ -280,14 +319,14 @@ export default function App() {
             </div>
           )}
 
-          {/* Quick Demo Samples (Visible when no active analysis or at bottom) */}
+          {/* Quick Demo Samples */}
           <SampleCostumes
             samples={samples}
             onSelectSample={handleSelectSample}
             isLoading={isLoading}
           />
 
-          {/* Recent Searches Saved to PostgreSQL */}
+          {/* Recent Searches Saved to PostgreSQL 17 */}
           {recentSearches.length > 0 && !activeAnalysis && (
             <div className="text-left mt-6">
               <div className="flex items-center justify-between mb-3 px-1">
@@ -363,6 +402,15 @@ export default function App() {
             >
               <Database className="w-4 h-4 text-slate-400" />
               <span className="text-[10px]">PG 17 Data</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-rose-600 active:scale-95 transition"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-[10px]">Sign Out</span>
             </button>
           </div>
         </footer>
