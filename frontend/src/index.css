@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F0F9FF;
+    color: #1E293B;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Glassmorphism */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(224, 242, 254, 0.9);
+}
+
+.glass-panel-subtle {
+  background: rgba(240, 249, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(186, 230, 253, 0.6);
+}
+
+/* Water Bar Loading Animation (Moving water from left to right) */
+.water-container {
+  position: relative;
+  width: 100%;
+  height: 38px;
+  background: #E0F2FE;
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(2, 132, 199, 0.15), 0 4px 14px rgba(56, 189, 248, 0.2);
+  border: 2px solid #BAE6FD;
+}
+
+.water-wave-layer-1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 C150,90 350,-40 500,40 C650,120 900,10 1200,50 L1200,120 L0,120 Z' fill='%230284C7' fill-opacity='0.85'%3E%3C/path%3E%3C/svg%3E");
+  background-size: 50% 100%;
+  animation: moveWaterLeftToRight 2.2s linear infinite;
+}
+
+.water-wave-layer-2 {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 300%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,20 C200,-30 400,80 600,20 C800,-40 1000,70 1200,30 L1200,120 L0,120 Z' fill='%2338BDF8' fill-opacity='0.75'%3E%3C/path%3E%3C/svg%3E");
+  background-size: 50% 100%;
+  animation: moveWaterLeftToRight 3.4s cubic-bezier(0.36, 0, 0.66, -0.56) infinite;
+}
+
+.water-wave-layer-3 {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 300%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,40 C180,95 380,20 600,55 C820,90 980,10 1200,45 L1200,120 L0,120 Z' fill='%237DD3FC' fill-opacity='0.6'%3E%3C/path%3E%3C/svg%3E");
+  background-size: 50% 100%;
+  animation: moveWaterLeftToRight 1.8s linear infinite reverse;
+}
+
+@keyframes moveWaterLeftToRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+/* Floating water bubbles */
+.bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: bubbleRise 2s infinite ease-in;
+}
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(20px) scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* Snake S around F Animation */
+@keyframes snakePulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(2, 132, 199, 0.95));
+    transform: scale(1.02);
+  }
+}
+
+@keyframes snakeSlither {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1000;
+  }
+}
+
+.snake-s-path {
+  stroke-dasharray: 1000;
+  animation: snakeSlither 5s linear infinite;
+}
+
+.snake-glow {
+  animation: snakePulse 2.8s ease-in-out infinite;
+}
+
+/* Mobile viewport simulator styles */
+.mobile-device-frame {
+  max-width: 440px;
+  margin: 0 auto;
+  box-shadow: 0 25px 60px -15px rgba(2, 132, 199, 0.25), 0 0 0 12px #FFFFFF, 0 0 0 14px #BAE6FD;
+  border-radius: 44px;
+  overflow: hidden;
+  background: #F0F9FF;
+  min-height: 860px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F0F9FF;
+}
+::-webkit-scrollbar-thumb {
+  background: #BAE6FD;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #38BDF8;
+}
