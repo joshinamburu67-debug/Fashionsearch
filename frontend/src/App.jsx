@@ -28,6 +28,16 @@ export default function App() {
 
   const [recentSearches, setRecentSearches] = useState([]);
   const fileInputRef = useRef(null);
+  const analysisSectionRef = useRef(null);
+
+  // Auto-scroll to the exact location of the uploaded product
+  useEffect(() => {
+    if (activeAnalysis && analysisSectionRef.current) {
+      setTimeout(() => {
+        analysisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [activeAnalysis]);
 
   // 1. Listen for Firebase Authentication state changes
   useEffect(() => {
@@ -356,7 +366,11 @@ export default function App() {
 
           {/* Active Costume Analysis Card */}
           {activeAnalysis && (
-            <div className="animate-in fade-in duration-300">
+            <div
+              ref={analysisSectionRef}
+              id="uploaded-product-location"
+              className="animate-in fade-in duration-300 scroll-mt-24"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   AI Recognition Result

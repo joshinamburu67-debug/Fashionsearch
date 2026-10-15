@@ -5,14 +5,16 @@ CUELINKS_PUB_ID = os.getenv("CUELINKS_PUB_ID", "194820")
 CUELINKS_API_KEY = os.getenv("CUELINKS_API_KEY", "culink_fashionsearch_live_api")
 
 def make_cuelinks_url(target_store_url: str) -> str:
-    """Wraps target fashion store url with Cuelinks monetized affiliate tracking."""
+    """Wraps target fashion store url with Cuelinks tracking if configured, otherwise returns direct store URL."""
+    if not CUELINKS_PUB_ID or CUELINKS_PUB_ID in ["194820", "culink_fashionsearch_live_api", "demo"]:
+        return target_store_url
     encoded_url = urllib.parse.quote_plus(target_store_url)
     return f"https://linksredirect.com/?pub_id={CUELINKS_PUB_ID}&subid=fashionsearch&url={encoded_url}"
 
 def generate_cuelinks_fashion_products(costume_data: dict) -> list:
     """
     Searches across top fashion apps (Myntra, Ajio, Flipkart, Meesho, Zara, H&M)
-    using Cuelinks affiliate link syndication.
+    using accurate store product search queries.
     """
     costume_name = costume_data.get("costume_name", "Fashion Outfit")
     color = costume_data.get("detected_color", "Blue")
@@ -34,7 +36,7 @@ def generate_cuelinks_fashion_products(costume_data: dict) -> list:
     fashion_stores = [
         {
             "name": "Myntra",
-            "search_template": f"https://www.myntra.com/{encoded_query}",
+            "search_template": f"https://www.myntra.com/search?rawQuery={encoded_query}",
             "brand": "SASSAFRAS",
             "price_factor": 0.72,  # Good discount deal
             "orig_factor": 1.9,

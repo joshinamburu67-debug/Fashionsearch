@@ -20,15 +20,15 @@ export default function CostumeAnalysisCard({ analysis, imageUrl }) {
     <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-lg shadow-brand-500/5 mb-5 border border-brand-100 transition-all">
       <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
         {/* Uploaded / Captured Image preview */}
-        <div className="relative w-full sm:w-32 h-48 sm:h-36 rounded-2xl overflow-hidden shadow-md flex-shrink-0 bg-brand-100/50">
+        <div className="relative w-full sm:w-36 h-52 sm:h-40 rounded-2xl overflow-hidden shadow-md flex-shrink-0 bg-brand-100/50 border border-brand-200">
           <img
             src={imageUrl}
             alt={costume_name}
             className="w-full h-full object-cover object-top"
           />
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-semibold text-white flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-brand-300" />
-            Gemini Vision
+          <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-brand-600/90 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1 shadow-sm">
+            <Sparkles className="w-3 h-3 text-sky-200" />
+            <span>Uploaded Costume</span>
           </div>
         </div>
 

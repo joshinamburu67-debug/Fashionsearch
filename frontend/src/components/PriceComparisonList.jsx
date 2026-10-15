@@ -191,7 +191,7 @@ export default function PriceComparisonList({ comparison }) {
 
                     {/* Direct Buy / Store Link */}
                     <a
-                      href={item.affiliate_url || item.product_url}
+                      href={item.product_url || item.affiliate_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 shadow-sm ${
@@ -200,7 +200,7 @@ export default function PriceComparisonList({ comparison }) {
                           : 'bg-brand-600 hover:bg-brand-700 text-white'
                       }`}
                     >
-                      <span>Buy Link</span>
+                      <span>View on {item.store_name}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
