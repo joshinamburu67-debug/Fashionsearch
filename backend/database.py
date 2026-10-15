@@ -27,6 +27,11 @@ if raw_db_url:
         DATABASE_URL = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
     else:
         DATABASE_URL = raw_db_url
+
+    # Auto-add sslmode=require for Render remote databases if not present
+    if ("render.com" in DATABASE_URL or "dpg-" in DATABASE_URL) and "sslmode" not in DATABASE_URL:
+        separator = "&" if "?" in DATABASE_URL else "?"
+        DATABASE_URL += f"{separator}sslmode=require"
 else:
     DATABASE_URL = f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
@@ -38,10 +43,10 @@ SessionLocal = None
 ACTIVE_DB_TYPE = "sqlite"
 
 try:
-    # Test PostgreSQL connection with a short timeout
+    # Test PostgreSQL connection with 10s timeout
     pg_test_engine = create_engine(
         DATABASE_URL,
-        connect_args={"connect_timeout": 3},
+        connect_args={"connect_timeout": 10},
         pool_pre_ping=True
     )
     with pg_test_engine.connect() as conn:
