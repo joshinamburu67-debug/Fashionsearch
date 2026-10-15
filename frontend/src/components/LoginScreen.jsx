@@ -267,7 +267,7 @@ export default function LoginScreen({ onLoginSuccess }) {
       {/* Footer info */}
       <div className="w-full max-w-sm z-10 flex items-center justify-center gap-1.5 text-[11px] text-brand-700/80 font-medium pb-2">
         <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-        <span>PostgreSQL 17 Database Connected</span>
+        <span>Gemini Vision AI • Multi-Store Price Comparison</span>
       </div>
     </div>
   );

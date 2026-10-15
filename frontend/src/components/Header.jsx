@@ -1,9 +1,9 @@
 import React from 'react';
-import { Camera, Database, Smartphone, Monitor, LogOut, User as UserIcon } from 'lucide-react';
+import { Camera, Smartphone, Monitor, LogOut, Play, Sparkles } from 'lucide-react';
 
 export default function Header({
   onOpenCam,
-  onOpenSqlModal,
+  onReplayIntro,
   isMobileFrame,
   setIsMobileFrame,
   user,
@@ -12,9 +12,13 @@ export default function Header({
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-brand-100 px-3 py-2.5 sm:px-6 transition-all">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
-        {/* Brand with F & S Snake Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 text-white shadow-md shadow-brand-500/20">
+        {/* Brand with F & S Snake Logo - Clickable to Replay Intro */}
+        <div
+          onClick={onReplayIntro}
+          className="flex items-center gap-2.5 cursor-pointer group"
+          title="Click to replay Serpent Intro Animation"
+        >
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
             {/* Micro S snake wrapped around F */}
             <svg viewBox="0 0 100 100" className="w-5 h-5 sm:w-6 sm:h-6 filter drop-shadow" fill="none">
               {/* F vertical & arms */}
@@ -42,14 +46,14 @@ export default function Header({
 
         {/* Right Action Tools */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* PostgreSQL 17 File Badge */}
+          {/* Replay Serpent Intro Animation Button */}
           <button
-            onClick={onOpenSqlModal}
-            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-semibold transition active:scale-95"
-            title="View PostgreSQL 17 Export file"
+            onClick={onReplayIntro}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-semibold transition active:scale-95"
+            title="Replay Serpent & 50mm Lens Intro"
           >
-            <Database className="w-3.5 h-3.5 text-brand-600" />
-            <span>PG 17 Data</span>
+            <Play className="w-3 h-3 text-sky-600 fill-sky-600" />
+            <span className="hidden xs:inline">Play Intro</span>
           </button>
 
           {/* Mobile view frame toggle (on desktop) */}

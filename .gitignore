@@ -30,3 +30,8 @@ Thumbs.db
 # Uploads cache (keep directory structure)
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Vercel
+.vercel
+frontend/.vercel
+

@@ -1,30 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, Sparkles, History, RefreshCcw, Search, Database, LogOut } from 'lucide-react';
+import { Camera, Upload, Sparkles, History, RefreshCcw, Search, LogOut, Play } from 'lucide-react';
 import LoadingScreen from './components/LoadingScreen';
+import IntroLoadingScreen from './components/IntroLoadingScreen';
+import CostumeSlideshow, { DEMO_OUTFITS } from './components/CostumeSlideshow';
 import LoginScreen from './components/LoginScreen';
 import CameraModal from './components/CameraModal';
 import CostumeAnalysisCard from './components/CostumeAnalysisCard';
 import PriceComparisonList from './components/PriceComparisonList';
 import Header from './components/Header';
-import SampleCostumes from './components/SampleCostumes';
-import PostgresExportModal from './components/PostgresExportModal';
 import { auth, onAuthStateChanged, logoutUser } from './firebase';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [showIntro, setShowIntro] = useState(true); // Loading intro on initial link open
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Finding Costume & Comparing Store Prices...');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isMobileFrame, setIsMobileFrame] = useState(false);
 
   const [activeAnalysis, setActiveAnalysis] = useState(null);
   const [activeComparison, setActiveComparison] = useState(null);
   const [activeImageUrl, setActiveImageUrl] = useState(null);
 
-  const [samples, setSamples] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -37,14 +36,9 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Fetch sample costumes & recent searches from PostgreSQL 17
+  // 2. Fetch recent searches
   useEffect(() => {
     if (user) {
-      fetch('/api/sample-costumes')
-        .then(res => res.json())
-        .then(data => setSamples(data))
-        .catch(err => console.log('Could not load samples', err));
-
       fetch('/api/searches')
         .then(res => res.json())
         .then(data => setRecentSearches(data))
@@ -90,16 +84,14 @@ export default function App() {
         setActiveImageUrl(data.image_url);
       }
 
-      // Refresh recent searches from PostgreSQL 17
       fetch('/api/searches')
         .then(r => r.json())
         .then(list => setRecentSearches(list));
 
     } catch (error) {
       console.error(error);
-      alert("Error analyzing costume. Please try another image or pick one of the sample costumes!");
+      alert("Error analyzing costume. Please try another image or pick one of the demo outfits in the slideshow!");
     } finally {
-      // Grace period to display the animated water bar
       setTimeout(() => {
         setIsLoading(false);
       }, 1000);
@@ -145,42 +137,113 @@ export default function App() {
     }
   };
 
-  // Handle sample costume selection
+  // Handle demo costume selection from Slideshow
   const handleSelectSample = (sample) => {
     setIsLoading(true);
-    setLoadingMessage(`Finding deals for ${sample.costume_name}...`);
+    setLoadingMessage(`Comparing store deals for ${sample.costume_name}...`);
     setActiveImageUrl(sample.image_url);
 
-    setTimeout(async () => {
-      try {
-        const fakeFileBlob = await fetch(sample.image_url).then(r => r.blob());
-        const fakeFile = new File([fakeFileBlob], "sample.jpg", { type: "image/jpeg" });
+    setTimeout(() => {
+      // Set instantaneous rich analysis & multi-store comparison
+      setActiveAnalysis({
+        costume_name: sample.costume_name,
+        detected_color: sample.detected_color,
+        detected_length: sample.detected_length,
+        detected_category: sample.detected_category,
+        detected_fabric: sample.detected_fabric || "Cotton & Silk Blend",
+        detected_pattern: sample.detected_pattern || "Designer Styled",
+        detected_style: sample.detected_style || "Contemporary",
+        color_hex: sample.color_hex || "#38BDF8",
+        summary: sample.summary || "High-demand outfit with price disparity across multiple platforms."
+      });
 
-        const formData = new FormData();
-        formData.append('file', fakeFile);
-        formData.append('source_type', 'sample');
+      const lowest = sample.lowest_price || 1499;
+      const original = sample.original_price || (lowest + 800);
+      const bestStore = sample.best_store || "Amazon";
 
-        const resp = await fetch('/api/search/upload', {
-          method: 'POST',
-          body: formData,
-        });
+      setActiveComparison({
+        lowest_price: lowest,
+        lowest_store: bestStore,
+        max_savings: original - lowest,
+        products: [
+          {
+            store_name: "Amazon",
+            title: `${sample.costume_name} (Prime Verified)`,
+            price: bestStore.includes("Amazon") ? lowest : lowest + 350,
+            original_price: original,
+            discount_percent: bestStore.includes("Amazon") ? sample.discount_percent || 35 : 18,
+            rating: 4.6,
+            review_count: 2480,
+            product_url: "https://www.amazon.in",
+            affiliate_url: "https://www.amazon.in",
+            image_url: sample.image_url,
+            in_stock: true,
+            delivery_info: "Next-Day Prime Delivery",
+            is_lowest_price: bestStore.includes("Amazon"),
+            badge: bestStore.includes("Amazon") ? "Lowest Price" : null
+          },
+          {
+            store_name: "Myntra",
+            title: `${sample.costume_name} - Runway Collection`,
+            price: bestStore.includes("Myntra") ? lowest : lowest + 420,
+            original_price: original,
+            discount_percent: bestStore.includes("Myntra") ? sample.discount_percent || 30 : 15,
+            rating: 4.5,
+            review_count: 1450,
+            product_url: "https://www.myntra.com",
+            affiliate_url: "https://www.myntra.com",
+            image_url: sample.image_url,
+            in_stock: true,
+            delivery_info: "2-3 business days",
+            is_lowest_price: bestStore.includes("Myntra"),
+            badge: bestStore.includes("Myntra") ? "Best Deal" : "Trending"
+          },
+          {
+            store_name: "Ajio",
+            title: `${sample.costume_name} Fashion Edit`,
+            price: bestStore.includes("Ajio") ? lowest : lowest + 550,
+            original_price: original,
+            discount_percent: bestStore.includes("Ajio") ? sample.discount_percent || 28 : 12,
+            rating: 4.3,
+            review_count: 980,
+            product_url: "https://www.ajio.com",
+            affiliate_url: "https://www.ajio.com",
+            image_url: sample.image_url,
+            in_stock: true,
+            delivery_info: "3-4 days standard",
+            is_lowest_price: bestStore.includes("Ajio"),
+            badge: bestStore.includes("Ajio") ? "Exclusive Price" : null
+          },
+          {
+            store_name: "Zara",
+            title: `${sample.costume_name} Signature Cut`,
+            price: original + 200,
+            original_price: original + 200,
+            discount_percent: 0,
+            rating: 4.7,
+            review_count: 820,
+            product_url: "https://www.zara.com",
+            affiliate_url: "https://www.zara.com",
+            image_url: sample.image_url,
+            in_stock: true,
+            delivery_info: "Express Shipping",
+            is_lowest_price: false,
+            badge: "Designer Cut"
+          }
+        ]
+      });
 
-        if (resp.ok) {
-          const resJson = await resp.json();
-          setActiveAnalysis(resJson.costume_analysis || sample);
-          setActiveComparison(resJson.comparison);
-        } else {
-          setActiveAnalysis(sample);
-        }
-      } catch (e) {
-        setActiveAnalysis(sample);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1200);
+      setIsLoading(false);
+    }, 900);
   };
 
-  // Initial Auth Loading State
+  // 1. Initial Loading Page when user opens the link:
+  // Realistic Serpent emerges from 'S' letter, circles screen, enters 50mm x 50mm magnifying glass, reveals site!
+  if (showIntro) {
+    return <IntroLoadingScreen onComplete={() => setShowIntro(false)} />;
+  }
+
+  // 2. Initial Auth Loading State
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-brand-50 flex flex-col items-center justify-center">
@@ -190,14 +253,14 @@ export default function App() {
     );
   }
 
-  // If user is not authenticated with Google, show Login Screen
+  // 3. If user is not authenticated with Google, show Login Screen
   if (!user) {
     return <LoginScreen onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />;
   }
 
   return (
     <div className={`min-h-screen bg-brand-50 text-slate-800 ${isMobileFrame ? 'py-8 px-4 flex items-center justify-center' : ''}`}>
-      {/* Loading Overlay with F & S Snake logo and flowing Water Bar */}
+      {/* Search / Upload Processing Overlay */}
       {isLoading && <LoadingScreen statusMessage={loadingMessage} />}
 
       {/* Camera Capture Modal */}
@@ -207,19 +270,13 @@ export default function App() {
         onCapture={handleCameraCapture}
       />
 
-      {/* PostgreSQL 17 Export Modal */}
-      <PostgresExportModal
-        isOpen={isSqlModalOpen}
-        onClose={() => setIsSqlModalOpen(false)}
-      />
-
       {/* App Shell: Mobile Frame mode or Full View */}
       <div className={`w-full ${isMobileFrame ? 'mobile-device-frame relative shadow-2xl flex flex-col' : 'max-w-2xl mx-auto min-h-screen flex flex-col'}`}>
         
         {/* Header with user profile and sign out */}
         <Header
           onOpenCam={() => setIsCameraOpen(true)}
-          onOpenSqlModal={() => setIsSqlModalOpen(true)}
+          onReplayIntro={() => setShowIntro(true)}
           isMobileFrame={isMobileFrame}
           setIsMobileFrame={setIsMobileFrame}
           user={user}
@@ -229,9 +286,9 @@ export default function App() {
         {/* Main Content Area */}
         <main className="flex-1 p-4 sm:p-6 pb-20">
           
-          {/* Hero Banner / Instructions */}
+          {/* Hero Banner */}
           {!activeAnalysis && (
-            <div className="text-center my-4 sm:my-6">
+            <div className="text-center my-4 sm:my-5">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-semibold mb-3 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-brand-500" />
                 <span>Hi, {user.displayName ? user.displayName.split(' ')[0] : 'Fashionista'}</span>
@@ -243,7 +300,7 @@ export default function App() {
                 </span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                Gemini AI detects color, length & style, then matches prices across Amazon, Myntra, Ajio, Zara & more.
+                Gemini AI detects color, length & style, then matches prices across Amazon, Myntra, Ajio & Zara.
               </p>
             </div>
           )}
@@ -285,6 +342,14 @@ export default function App() {
             </div>
           </div>
 
+          {/* Demo Costumes Slideshow (Slides one after another with at least 4 outfits) */}
+          {!activeAnalysis && (
+            <CostumeSlideshow
+              onSelectOutfit={handleSelectSample}
+              isLoading={isLoading}
+            />
+          )}
+
           {/* Active Costume Analysis Card */}
           {activeAnalysis && (
             <div className="animate-in fade-in duration-300">
@@ -319,27 +384,15 @@ export default function App() {
             </div>
           )}
 
-          {/* Quick Demo Samples */}
-          <SampleCostumes
-            samples={samples}
-            onSelectSample={handleSelectSample}
-            isLoading={isLoading}
-          />
-
-          {/* Recent Searches Saved to PostgreSQL 17 */}
+          {/* Recent Searches (Clean, no PG 17 Data text) */}
           {recentSearches.length > 0 && !activeAnalysis && (
             <div className="text-left mt-6">
               <div className="flex items-center justify-between mb-3 px-1">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <History className="w-3.5 h-3.5 text-slate-400" />
-                  Recent Searches (PostgreSQL 17)
+                  Recent Searches
                 </h3>
-                <button
-                  onClick={() => setIsSqlModalOpen(true)}
-                  className="text-[11px] font-semibold text-brand-600 hover:underline"
-                >
-                  View SQL Dump
-                </button>
+                <span className="text-[11px] text-slate-400 font-medium">Saved History</span>
               </div>
 
               <div className="space-y-2">
@@ -364,7 +417,7 @@ export default function App() {
                     </div>
 
                     <span className="text-[11px] font-semibold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">
-                      {item.product_count || 6} Stores
+                      {item.product_count || 4} Stores
                     </span>
                   </div>
                 ))}
@@ -373,7 +426,7 @@ export default function App() {
           )}
         </main>
 
-        {/* Mobile Sticky Footer */}
+        {/* Mobile Sticky Footer (Clean, no PG 17 Data option) */}
         <footer className="sticky bottom-0 z-20 glass-panel border-t border-brand-100 py-2.5 px-4 text-center">
           <div className="flex items-center justify-around text-xs font-semibold text-slate-500">
             <button
@@ -397,11 +450,12 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setIsSqlModalOpen(true)}
+              onClick={() => setShowIntro(true)}
               className="flex flex-col items-center gap-0.5 hover:text-brand-700 active:scale-95 transition"
+              title="Replay Serpent Intro"
             >
-              <Database className="w-4 h-4 text-slate-400" />
-              <span className="text-[10px]">PG 17 Data</span>
+              <Play className="w-4 h-4 text-sky-500" />
+              <span className="text-[10px]">Serpent Intro</span>
             </button>
 
             <button
