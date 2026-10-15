@@ -10,6 +10,8 @@ import PriceComparisonList from './components/PriceComparisonList';
 import Header from './components/Header';
 import { auth, onAuthStateChanged, logoutUser } from './firebase';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -39,7 +41,7 @@ export default function App() {
   // 2. Fetch recent searches
   useEffect(() => {
     if (user) {
-      fetch('/api/searches')
+      fetch(`${API_BASE_URL}/api/searches`)
         .then(res => res.json())
         .then(data => setRecentSearches(data))
         .catch(err => console.log('Could not load recent searches', err));
@@ -70,7 +72,7 @@ export default function App() {
     setActiveImageUrl(previewUrl);
 
     try {
-      const response = await fetch('/api/search/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/search/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -81,10 +83,11 @@ export default function App() {
       setActiveAnalysis(data.costume_analysis);
       setActiveComparison(data.comparison);
       if (data.image_url) {
-        setActiveImageUrl(data.image_url);
+        const fullUrl = data.image_url.startsWith('http') || !API_BASE_URL ? data.image_url : `${API_BASE_URL}${data.image_url}`;
+        setActiveImageUrl(fullUrl);
       }
 
-      fetch('/api/searches')
+      fetch(`${API_BASE_URL}/api/searches`)
         .then(r => r.json())
         .then(list => setRecentSearches(list));
 
@@ -105,7 +108,7 @@ export default function App() {
     setActiveImageUrl(base64Image);
 
     try {
-      const response = await fetch('/api/search/base64', {
+      const response = await fetch(`${API_BASE_URL}/api/search/base64`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,10 +123,11 @@ export default function App() {
       setActiveAnalysis(data.costume_analysis);
       setActiveComparison(data.comparison);
       if (data.image_url) {
-        setActiveImageUrl(data.image_url);
+        const fullUrl = data.image_url.startsWith('http') || !API_BASE_URL ? data.image_url : `${API_BASE_URL}${data.image_url}`;
+        setActiveImageUrl(fullUrl);
       }
 
-      fetch('/api/searches')
+      fetch(`${API_BASE_URL}/api/searches`)
         .then(r => r.json())
         .then(list => setRecentSearches(list));
 

@@ -18,10 +18,17 @@ PG_PORT = os.getenv("PG_PORT", "5432")
 PG_DB = os.getenv("PG_DB", "Fashionsearch")
 
 encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-)
+raw_db_url = os.getenv("DATABASE_URL")
+
+if raw_db_url:
+    if raw_db_url.startswith("postgres://"):
+        DATABASE_URL = raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif raw_db_url.startswith("postgresql://") and not raw_db_url.startswith("postgresql+"):
+        DATABASE_URL = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    else:
+        DATABASE_URL = raw_db_url
+else:
+    DATABASE_URL = f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
 Base = declarative_base()
 

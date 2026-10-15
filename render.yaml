@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: fashionsearch-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AMAZON_ASSOCIATE_TAG
+        value: fashionsearch-21
+      - key: CUELINKS_PUB_ID
+        value: "194820"
+      - key: CUELINKS_API_KEY
+        value: culink_fashionsearch_live_api
+      - key: DATABASE_URL
+        sync: false
